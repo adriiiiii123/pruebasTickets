@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>iTickets - Edición en Línea (Código Fijo)</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body { background-color: #fcfcfc; font-family: 'Segoe UI', sans-serif; padding: 20px; }
+        .table td { vertical-align: middle; font-size: 0.85rem; height: 110px; }
+        .editing-row { background-color: #f0f7ff !important; border: 2px solid #0d6efd !important; }
+        
+        .excel-chat-scroll {
+            max-height: 90px;
+            overflow-y: auto;
+            background: #ffffff;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 8px;
+            font-size: 0.75rem;
+        }
+
+        .chat-item { 
+            border-bottom: 1px solid #eee; 
+            padding: 5px 0; 
+            margin-bottom: 5px; 
+        }
+        .preview-badge { font-size: 0.7rem; color: #0d6efd; margin-top: 3px; }
+    </style>
+</head>
+<body>
+
+<div class="container-fluid bg-white p-4 shadow-sm rounded">
+    <h3 class="mb-4">Tickets</h3>
+
+    <div class="d-flex justify-content-between mb-3">
+        <div style="width: 300px;">
+            <input type="text" class="form-control form-control-sm" placeholder="Buscar Ticket">
+        </div>
+    </div>    
+    
+    <table class="table table-bordered align-middle">
+        <thead>
+            <tr>
+                <th style="width: 10%;">Código</th>
+                <th style="width: 15%;">Vencimiento</th>
+                <th style="width: 65%;">Historial y Nueva Nota</th>
+                <th style="width: 10%;" class="text-center">Acciones</th>
+            </tr>
+        </thead>
+        <tbody id="tablaCuerpo">
+            <tr id="fila-1">
+                <td class="col-codigo fw-bold">C-001</td> <td class="col-vence">15-Abr-2026</td>
+                <td class="col-resp" id="td-resp-1">
+                    <div class="text-muted small">Haz clic en el ojo para ver mensajes...</div>
+                </td>
+                <td class="text-center col-acciones">
+                    <button class="btn btn-outline-primary btn-sm" onclick="activarEdicionFila(1)">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </td>
+            </tr>
+        </tbody>
+        <tbody id="tablaCuerpo">
+            <tr id="fila-1">
+                <td class="col-codigo fw-bold">C-002</td> <td class="col-vence">20-Abr-2026</td>
+                <td class="col-resp" id="td-resp-1">
+                    <div class="text-muted small">Haz clic en el ojo para ver mensajes...</div>
+                </td>
+                <td class="text-center col-acciones">
+                    <button class="btn btn-outline-primary btn-sm" onclick="activarEdicionFila(1)">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<script>
+    let linksTemporales = {};
+    let datosHistorial = {
+        1: [{fecha: "15/04/2026 10:00", resp: "Sistema", msg: "Ticket creado.", link: "", adjunto: ""}]
+    };
+
+    function activarEdicionFila(id) {
+        const fila = document.getElementById(`fila-${id}`);
+        const celdaVence = fila.querySelector('.col-vence');
+        const celdaRes = document.getElementById(`td-resp-${id}`);
+
+        fila.classList.add('editing-row');
+
+        celdaVence.innerHTML = `<input type="date" class="form-control form-control-sm" id="in-fec-${id}" value="2026-04-15">`;
+
+        let htmlHist = "";
+        datosHistorial[id].forEach(h => {
+            htmlHist += `
+                <div class="chat-item">
+                    <div class="d-flex justify-content-between">
+                        <b class="text-primary">${h.resp}</b>
+                        <span class="text-muted" style="font-size:0.65rem">${h.fecha}</span>
+                    </div>
+                    <div>${h.msg}</div>
+                    ${h.link ? `<div class="mt-1"><a href="${h.link}" target="_blank" class="small"><i class="fas fa-link"></i> Link</a></div>` : ''}
+                    ${h.adjunto ? `<div class="text-success small"><i class="fas fa-file-upload"></i> ${h.adjunto}</div>` : ''}
+                </div>`;
+        });
+
+        celdaRes.innerHTML = `
+            <div class="row g-2">
+                <div class="col-md-5">
+                    <div class="excel-chat-scroll">${htmlHist}</div>
+                </div>
+                <div class="col-md-7 border-start ps-2">
+                    <div class="d-flex gap-1 mb-1">
+                        <select class="form-select form-select-sm" id="in-resp-${id}">
+                            <option>Juan Pérez</option>
+                            <option>María García</option>
+                        </select>
+                        <button class="btn btn-light border btn-sm" onclick="document.getElementById('file-${id}').click()"><i class="fas fa-paperclip"></i></button>
+                        <button class="btn btn-light border btn-sm" onclick="pedirLink(${id})"><i class="fas fa-link"></i></button>
+                        <input type="file" id="file-${id}" class="d-none" onchange="mostrarPreview(${id})">
+                    </div>
+                    <textarea class="form-control form-control-sm" id="in-msg-${id}" rows="2" placeholder="Mensaje..."></textarea>
+                    <div class="col-md-6">
+                        <label class="fw-bold small text-muted d-block">Estatus</label>
+                        <select class="form-select form-select-sm" style="width: 150px;">
+                            <option>Abierto</option>
+                            <option>Cerrado</option>
+                        </select>
+                    </div>
+                    <div id="preview-${id}" class="preview-badge"></div>
+                </div>
+            </div>
+        `;
+
+        fila.querySelector('.col-acciones').innerHTML = `
+            <div class="d-flex flex-column gap-1">
+                <button class="btn btn-success btn-sm" onclick="guardarFila(${id})"><i class="fas fa-check"></i></button>
+                <button class="btn btn-secondary btn-sm" onclick="cancelarEdicion(${id})"><i class="fas fa-times"></i></button>
+            </div>
+        `;
+    }
+
+    function mostrarPreview(id) {
+        const file = document.getElementById(`file-${id}`).files[0];
+        document.getElementById(`preview-${id}`).innerHTML = `<i class="fas fa-file-upload text-success"></i> ${file.name}`;
+    }
+
+    function pedirLink(id) {
+        const url = prompt("URL del enlace:");
+        if(url) {
+            linksTemporales[id] = url;
+            document.getElementById(`preview-${id}`).innerHTML = `<i class="fas fa-link text-primary"></i> Link listo`;
+        }
+    }
+
+    function guardarFila(id) {
+        const nFec = document.getElementById(`in-fec-${id}`).value;
+        const nMsg = document.getElementById(`in-msg-${id}`).value;
+        const nRes = document.getElementById(`in-resp-${id}`).value;
+        const nAdj = document.getElementById(`file-${id}`).files[0];
+        const nLink = linksTemporales[id] || "";
+        const fechaHora = new Date().toLocaleString();
+
+        if(!nMsg) return alert("Escribe un mensaje");
+
+        datosHistorial[id].push({
+            fecha: fechaHora,
+            resp: nRes.split(' ')[0],
+            msg: nMsg,
+            link: nLink,
+            adjunto: nAdj ? nAdj.name : ""
+        });
+
+        const fila = document.getElementById(`fila-${id}`);
+        fila.classList.remove('editing-row');
+        fila.querySelector('.col-vence').innerText = nFec;
+
+        let resumen = `<strong>${nRes}:</strong> ${nMsg}`;
+        if(nLink) resumen += ` <a href="${nLink}" target="_blank"><i class="fas fa-link"></i></a>`;
+        if(nAdj) resumen += ` <i class="fas fa-file-upload text-success" title="${nAdj.name}"></i>`;
+        
+        document.getElementById(`td-resp-${id}`).innerHTML = resumen;
+        fila.querySelector('.col-acciones').innerHTML = `<button class="btn btn-outline-primary btn-sm" onclick="activarEdicionFila(${id})"><i class="fas fa-eye"></i></button>`;
+        
+        linksTemporales[id] = null;
+    }
+
+    function cancelarEdicion(id) {
+        const fila = document.getElementById(`fila-${id}`);
+        fila.classList.remove('editing-row');
+        fila.querySelector('.col-vence').innerText = "15-Abr-2026";
+        document.getElementById(`td-resp-${id}`).innerHTML = '<span class="text-muted">Edición cerrada.</span>';
+        fila.querySelector('.col-acciones').innerHTML = `<button class="btn btn-outline-primary btn-sm" onclick="activarEdicionFila(${id})"><i class="fas fa-eye"></i></button>`;
+    }
+</script>
+
+</body>
+</html>
